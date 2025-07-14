@@ -10,6 +10,13 @@ import yaml
 from ShipGeoConfig import AttrDict
 from tabulate import tabulate
 import geomGeant4
+from array import array
+import joblib
+import torch
+from GNN_veto.model.nn_model import NN
+from GNN_veto.util.inference import nn_output
+from GNN_veto.model.gnn_model import EncodeProcessDecode
+from GNN_veto.util.inference import gnn_output_binary
 
 class AnalysisContext:
     def __init__(self, tree, geo_file):
@@ -311,11 +318,11 @@ class selection_check:
         d2_pdg=d2_mc.GetPdgCode()
         
         
+
         LEPTON_PDGS = {11, 13}      # 11 = electron, 13 = muon
 
-        d1_is_lepton = d1_pdg in LEPTON_PDGS
-        d2_is_lepton = d2_pdg in LEPTON_PDGS
-
+        d1_is_lepton = abs(d1_pdg) in LEPTON_PDGS
+        d2_is_lepton = abs(d2_pdg) in LEPTON_PDGS
 
         if d1_is_lepton and d2_is_lepton:
             return 1                      # dileptonic
@@ -544,7 +551,16 @@ class veto_tasks():
         self.sigma_t_SBThit=1.0              #(ns)
         self.sel = selection_check(ctx)
         
-
+    def SBTcell_map(self): #provides a cell map with index in [0,nCells] for each cell.
+       fGeo = ROOT.gGeoManager
+       detList = {}
+       LiSC = fGeo.GetTopVolume().GetNode('DecayVolume_1').GetVolume().GetNode('T2_1').GetVolume().GetNode('VetoLiSc_0')
+       index = -1
+       for LiSc_cell in LiSC.GetVolume().GetNodes():
+          index += 1
+          name = LiSc_cell.GetName()
+          detList[index] = name[-6:]
+       return detList
     def SBT_decision(self,mcParticle=None,detector='liquid',threshold=45,advSBT=None,candidate=None):
         # if mcParticle >0, only count hits with this particle
         # if mcParticle <0, do not count hits with this particle
@@ -736,6 +752,58 @@ class veto_tasks():
 
         return matched, False            
 
+    def Veto_decision_GNNbinary(self,
+                            mcParticle=None,
+                            detector='liquid',
+                            candidate=None,
+                            threshold=0.6):
+        """
+        Binary SBT veto: returns (veto, P(background)).
+        """
+
+        # ---------- copy–paste from the old 3-class code ------------------
+        self.inputmatrix = []
+
+        XYZ = np.load("/afs/cern.ch/user/a/anupamar/FairShip_Analysis/BackgroundRejection_Studies/GNN_veto/data/SBT_new_geo_XYZ.npy")   # 854-cell geometry
+        model = EncodeProcessDecode(
+            mlp_output_size=8,
+            global_op=1,          # ONE output !
+            num_blocks=4)
+
+        # load weights once
+        if not hasattr(self, "_gnn_bin_loaded"):
+            model.load_state_dict(
+                torch.load("/afs/cern.ch/user/a/anupamar/FairShip_Analysis/BackgroundRejection_Studies/GNN_veto/data/GNN_SBTveto_BINARY_45MeV_25epochs.pth",
+                           map_location="cpu"))
+            model.eval()
+            self._gnn_bin_loaded = model
+        else:
+            model = self._gnn_bin_loaded
+        # ---------------------------------------------------------------
+
+        detList = self.SBTcell_map()
+        energy_array = np.zeros(854, dtype=np.float32)        # 854 cells
+
+        for aDigi in self.tree.Digi_SBTHits:
+            detID = str(aDigi.GetDetectorID())
+            idx   = [i for i, v in detList.items() if v == detID][0]
+            if idx < 854:
+                energy_array[idx] = aDigi.GetEloss()
+
+        if candidate is None:
+            candidate = self.tree.Particles[0]
+
+        cand_pos = ROOT.TLorentzVector()
+        candidate.ProductionVertex(cand_pos)
+        vertexposition = np.array(
+            [cand_pos.X(), cand_pos.Y(), cand_pos.Z()], dtype=np.float32)
+
+        self.inputmatrix.append(np.concatenate((energy_array, vertexposition)))
+        self.inputmatrix = np.array(self.inputmatrix, dtype=np.float32)
+
+        # ---------- one-line binary inference ----------------------------
+        veto, prob_bg = gnn_output_binary(model, self.inputmatrix, XYZ, threshold)
+        return veto, prob_bg
 
 class weights_calc():
     "Class derived from ShipVeto WIP"

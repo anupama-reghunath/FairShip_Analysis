@@ -14,7 +14,7 @@ U2_real = {
 }
 
 p = argparse.ArgumentParser(description=__doc__)
-p.add_argument("-p", "--path", default="/eos/experiment/ship/user/anupamar/Signal_EventCalc/2muv/12878270/HNL_1.000e+00_5.000e+01_3.333e-01_3.333e-01_3.333e-01",help="Path to simulation file") #mumunu 1 GeV
+p.add_argument("-p", "--path", default="/eos/experiment/ship/user/anupamar/Signal_EventCalc/2muv/12946374/HNL_1.000e+00_7.133e+04_4.808e-02_7.692e-01_1.827e-01",help="Path to simulation file") #mumunu 1 GeV
 
 known, rest = p.parse_known_args(sys.argv[1:])
 
@@ -22,7 +22,7 @@ def define_weight_EventCalc(event,path=known.path):
 	
 	w_event=event.MCTrack[0].GetWeight()
 
-	eventcalcdata_path='/eos/experiment/ship/user/anupamar/EventCalc_data'
+	eventcalcdata_path='/eos/experiment/ship/user/anupamar/EventCalc_data/FairShip_benchmarkcoupling/'
 
 	channel=path.split('/')[-3] 
 	foldername=os.path.basename(path)
@@ -32,7 +32,7 @@ def define_weight_EventCalc(event,path=known.path):
 
 	#print(f"channel:\t{channel},\tmass:\t{masstag}")
 
-	datfile=f'{eventcalcdata_path}/{channel}_sample/HNL/total/HNL_3.333e-01_3.333e-01_3.333e-01_total.txt'
+	datfile=f'{eventcalcdata_path}/{channel}_sample/HNL/total/HNL_4.808e-02_7.692e-01_1.827e-01_total.txt'
 	inputfile=f'{eventcalcdata_path}/rootfiles/{channel}/{foldername}_data.root'
 	
 	#print(f"{path}\n\t should match \n {inputfile}\n\t does it?")
