@@ -1,0 +1,7 @@
+# configs/simple.yaml
+use_energy: true
+use_xyz:    true
+use_phi:    false
+use_delta_t:   false
+add_edge_distance: true
+k_nn: 20
