@@ -1,14 +1,14 @@
-executable          	= /afs/cern.ch/user/a/anupamar/FairShip_Analysis/BackgroundRejection_Studies/make_results.sh
+executable          	= merge_all_studies.sh
 #should_transfer_files 	= YES
 transfer_output_files 	= ""
-arguments             	= /eos/experiment/ship/user/anupamar/BackgroundStudies/alt_v2/ /afs/cern.ch/user/a/anupamar/alt_v2/FairShip_Analysis/ /afs/cern.ch/user/a/anupamar/alt_v2/FairShip_Analysis/BackgroundRejection_Studies/test/
+arguments             	= /eos/experiment/ship/user/anupamar/BackgroundStudies/alt_v2/ /afs/cern.ch/user/a/anupamar/alt_v2/FairShip_Analysis/ /afs/cern.ch/user/a/anupamar/alt_v2/FairShip_Analysis/BackgroundRejection_Studies/results_new/
 notify_user				= anupama.reghunath@physik.hu-berlin.de
 notification 			= Always
 
 ##############################################################################################################
-#error 					= /afs/cern.ch/work/a/anupamar/HTCondor_files/error/condor_invmass_BG.err
-#log 					= /afs/cern.ch/work/a/anupamar/HTCondor_files/log/condor_invmass_BG.log
-output					= /afs/cern.ch/user/a/anupamar/Analysis/HNLMass/condor_runmassreco.out
+#error 					= /afs/cern.ch/work/a/anupamar/HTCondor_files/error/condor_mergeBG.err
+#log 					= /afs/cern.ch/work/a/anupamar/HTCondor_files/log/condor_mergeBG.log
+#out 					= /afs/cern.ch/work/a/anupamar/HTCondor_files/out/condor_mergeBG.out
 ##############################################################################################################
 #request_memory 		= 50 GB
 #request_disk			= 4 GB

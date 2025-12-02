@@ -50,7 +50,7 @@ python "$SCRIPTDIR/BackgroundRejection_Studies/merge.py" --muonDIS --leptonrho -
 echo "completed."
 
 #--------------------------------------------------------------------------------------
-exit 0
+#exit 0
 #--------------------------------------------------------------------------------------
 
 echo "Merging neuDIS now .."
@@ -92,7 +92,7 @@ python "$SCRIPTDIR/BackgroundRejection_Studies/merge.py" --neuDIS --leptonrho --
 echo "completed."
 
 #--------------------------------------------------------------------------------------
-exit 0 #REMOVE THIS IF SIGNAL STUDIES ARE ALSO TO BE MERGED
+#exit 0 #REMOVE THIS IF SIGNAL STUDIES ARE ALSO TO BE MERGED
 #--------------------------------------------------------------------------------------
 
 echo "Merging Signal Studies now.."
@@ -150,7 +150,6 @@ python "$SCRIPTDIR/BackgroundRejection_Studies/merge.py" --murho --heliumCase > 
 #condor_scripts/condor_hadd.sh "$EOSDIR/signalEventCalc/murho" "murho_EventCalc"
 
 echo "completed."
-
 
 #------------------------------------------------------------------------------------------------------------
 
