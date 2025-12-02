@@ -12,6 +12,7 @@ import sys
 parser = ArgumentParser(description=__doc__)
 
 parser.add_argument("--path", dest="main_path",help="parent path", required=False, default='/eos/experiment/ship/user/anupamar/BackgroundStudies/alt_v2/')
+parser.add_argument("--debug", action="store_true", help="open in interactive mode")
 
 group1 = parser.add_mutually_exclusive_group(required=True)
 
@@ -66,48 +67,6 @@ else:
                 ]
 
 print(pathlist)
-#main_path='/eos/experiment/ship/user/anupamar/BackgroundStudies/corrected/'
-
-"""
-
-
-
-if options.muonDIS:
-
-if options.muonDIS_fullreco:
-    pathlist = [
-        main_path+'/muonDIS_fullreco/SBT',
-        main_path+'/muonDIS_fullreco/Tr'
-    ]
-
-if options.neuDIS:
-    pathlist = [main_path+'/neuDIS/']
-
-if options.neuDIS_fullreco:
-    pathlist = [main_path+'/neuDIS_fullreco/']
-
-
-if options.neuDIS_leptonrho:
-    pathlist = [main_path+'/neuDIS_leptonrho/']
-
-if options.muonDIS_leptonrho:
-    pathlist = [
-        main_path+'/muonDIS_leptonrho/SBT',
-        main_path+'/muonDIS_leptonrho/Tr'
-    ]
-
-if options.mupi:
-    pathlist = [main_path+'/mupi_EventCalc/']
-
-if options.mumuv:
-    pathlist = [main_path+'/2muv_EventCalc/']
-
-if options.erho:
-    pathlist = [main_path+'/erho_EventCalc/']
-
-if options.murho:
-    pathlist = [main_path+'/murho_EventCalc/']
-"""
 
 # tag definitions
 pre_tags            = ["n_particles", "fiducial", "dist2innerwall", "dist2vesselentrance","impact_par", "doca", "n_dof", "reduced_chi2", "d_mom", "preselection"]
@@ -166,18 +125,6 @@ df = load_csvs(pathlist, keyword)
 
 agg = df.groupby('tag')[['nCandidates','nEvents15y']].sum().sort_index()
 
-if any("neuDIS" in p for p in pathlist):
-    
-    if "simulated" not in agg.index:
-        raise RuntimeError("No 'simulated' row found; cannot compute scale.")
-    sim_nc_raw = float(agg.at["simulated", "nCandidates"])
-    if sim_nc_raw <= 0:
-        raise RuntimeError("Simulated nCandidates is zero; cannot compute scale.")
-    scale = (6000.0 * 19969) / sim_nc_raw
-    print("scalefactor",scale)
-    agg['nEvents15y'] = agg['nEvents15y'] * scale
-
-
 rec_nc, rec_n15 = agg.loc["reconstructed", ["nCandidates", "nEvents15y"]]
 sim_nc, sim_n15 = agg.loc["simulated", ["nCandidates", "nEvents15y"]]
 
@@ -230,66 +177,68 @@ printed = set(['simulated','reconstructed']) | set(pre_tags) | set(veto_tags) | 
 others = [t for t in agg.index if t not in printed]
 if others: _block('Other cuts', others)
 
-"""
-#---------------------------------------------------------------------------------------------------------------------------------------
-# indexed menu clustered for further interactive debugging
 
-def _build_all_tags():
-    all_tags = []
-    clustered = [('Event Stats',['simulated','reconstructed']),
-                 ('Pre-Selection', pre_tags), ('Veto', veto_tags)] + table_specs + [('Other cuts', others)]
-    for _, tags in clustered:
-        for t in tags:
-            all_tags.append(t)
-    return all_tags
+if options.debug:    
+    
+    #---------------------------------------------------------------------------------------------------------------------------------------
+    
+    # indexed menu clustered for further interactive debugging
 
-def _build_menu(all_tags):
-    return [[i, t,
-             int(agg.at[t, 'nCandidates']) if t in agg.index else 0,
-             f"{agg.at[t, 'nEvents15y']}" if t in agg.index else '0.000']
-            for i, t in enumerate(all_tags)]
+    def _build_all_tags():
+        all_tags = []
+        clustered = [('Event Stats',['simulated','reconstructed']),
+                     ('Pre-Selection', pre_tags), ('Veto', veto_tags)] + table_specs + [('Other cuts', others)]
+        for _, tags in clustered:
+            for t in tags:
+                all_tags.append(t)
+        return all_tags
 
-while True:
-    all_tags = _build_all_tags()
-    menu = _build_menu(all_tags)
-    print(tabulate(menu, headers=['#','tag','nEvents generated','nEvents15y'],
-                   tablefmt='rounded_grid'))
-    print()
+    def _build_menu(all_tags):
+        return [[i, t,
+                 int(agg.at[t, 'nCandidates']) if t in agg.index else 0,
+                 f"{agg.at[t, 'nEvents15y']}" if t in agg.index else '0.000']
+                for i, t in enumerate(all_tags)]
 
-    try:
-        choice = input('Enter tag number (blank to exit): ').strip()
-        if not choice:
-            break
-        idx = int(choice)
-        if idx < 0 or idx >= len(all_tags):
-            print('Invalid index.\n')
-            continue
-        tag = all_tags[idx]
-    except (ValueError, KeyboardInterrupt, EOFError):
-        print('Invalid.\n')
-        continue
-
-    print(f"Selected [{idx}]: {tag}\n")
-
-    # lookup
-    sel = df[(df.tag == tag) & (df.nCandidates > 0)][['job', 'nCandidates', 'nEvents15y']].reset_index(drop=True)
-    if sel.empty:
-        print('No jobs with non-zero for', tag)
-    else:
-        sel["nCandidates"] = sel["nCandidates"].apply(lambda x: fmt(x, rec_nc))
-        sel["nEvents15y"]  = sel["nEvents15y"].apply(lambda x: fmt(x, rec_n15))
-        print(tabulate(sel.values.tolist(),
-                       headers=['job','nEvents generated','nEvents15y'],
-                       tablefmt='rounded_grid', floatfmt='.2e'))
-
-    try:
-        again = input("Do you wish to continue? [yes/no] ").strip().lower()
-    except (KeyboardInterrupt, EOFError):
-        break
-    if again in ('', 'y', 'yes'):
+    while True:
+        all_tags = _build_all_tags()
+        menu = _build_menu(all_tags)
+        print(tabulate(menu, headers=['#','tag','nEvents generated','nEvents15y'],
+                       tablefmt='rounded_grid'))
         print()
-        continue
-    else:
-        break
-#---------------------------------------------------------------------------------------------------------------------------------------
-"""
+
+        try:
+            choice = input('Enter tag number (blank to exit): ').strip()
+            if not choice:
+                break
+            idx = int(choice)
+            if idx < 0 or idx >= len(all_tags):
+                print('Invalid index.\n')
+                continue
+            tag = all_tags[idx]
+        except (ValueError, KeyboardInterrupt, EOFError):
+            print('Invalid.\n')
+            continue
+
+        print(f"Selected [{idx}]: {tag}\n")
+
+        # lookup
+        sel = df[(df.tag == tag) & (df.nCandidates > 0)][['job', 'nCandidates', 'nEvents15y']].reset_index(drop=True)
+        if sel.empty:
+            print('No jobs with non-zero for', tag)
+        else:
+            sel["nCandidates"] = sel["nCandidates"].apply(lambda x: fmt(x, rec_nc))
+            sel["nEvents15y"]  = sel["nEvents15y"].apply(lambda x: fmt(x, rec_n15))
+            print(tabulate(sel.values.tolist(),
+                           headers=['job','nEvents generated','nEvents15y'],
+                           tablefmt='rounded_grid', floatfmt='.2e'))
+
+        try:
+            again = input("Do you wish to continue? [yes/no] ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            break
+        if again in ('', 'y', 'yes'):
+            print()
+            continue
+        else:
+            break
+    #---------------------------------------------------------------------------------------------------------------------------------------
