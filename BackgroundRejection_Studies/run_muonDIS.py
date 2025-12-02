@@ -48,24 +48,24 @@ g.add_argument("--fullreco", dest="channel", action="store_const", const="fullre
 known, rest = p.parse_known_args(sys.argv[1:])
 
 
-dis = (pd.read_csv(known.path+"/ndis_summary.csv")                       #contains the number of DIS in helium /vessel for each muon tagged to the eventNr and job_id; easy lookup but ugly fix!
-         .rename(columns={"muon_folder/job_folder": "job_folder"})  
-         .astype({"eventNr": int})
-         .set_index(["job_folder", "eventNr"]))
+#dis = (pd.read_csv(known.path+"/ndis_summary.csv")                       #contains the number of DIS in helium /vessel for each muon tagged to the eventNr and job_id; easy lookup but ugly fix!
+#         .rename(columns={"muon_folder/job_folder": "job_folder"})  
+#         .astype({"eventNr": int})
+#         .set_index(["job_folder", "eventNr"]))
 
-def ndis_rescale(job_folder,event_nr, ip_cat):
+#def ndis_rescale(job_folder,event_nr, ip_cat):
     
-    row = dis.loc[(job_folder, int(event_nr))]
-    num = int(row["nDIS_all"])
+#    row = dis.loc[(job_folder, int(event_nr))]
+#    num = int(row["nDIS_all"])
     
-    if ip_cat=='vesselCase':
-        den = int(row["nDIS_vessel"])
-    if ip_cat=='heliumCase':
-        den = int(row["nDIS_helium"])
-    if ip_cat=='all':
-        den = int(row["nDIS_all"])
+#    if ip_cat=='vesselCase':
+#        den = int(row["nDIS_vessel"])
+#    if ip_cat=='heliumCase':
+#        den = int(row["nDIS_helium"])
+#    if ip_cat=='all':
+#        den = int(row["nDIS_all"])
 
-    return num / den
+#    return num / den
 
 
 
@@ -93,4 +93,5 @@ else:
     raise RuntimeError("Unknown channel flag")
 
 sys.argv = [sys.argv[0], *rest, "-p", known.path] # Pass the parsed path plus any remaining args
-main(IP_CUT=ipcut,weight_function=calcweight_muonDIS,fix_nDIS=ndis_rescale,finalstate=finalstate)
+#main(IP_CUT=ipcut,weight_function=calcweight_muonDIS,fix_nDIS=ndis_rescale,finalstate=finalstate)
+main(IP_CUT=ipcut,weight_function=calcweight_muonDIS,finalstate=finalstate)
