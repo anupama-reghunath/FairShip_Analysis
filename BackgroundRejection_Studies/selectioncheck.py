@@ -182,6 +182,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
                 "AdvSBT@45MeV",
                 "AdvSBT@90MeV",
                 'GNNSBT@45MeV',
+                "[ AdvSBT+GNNSBT ]@45MeV",
                 "UBT",
                 ]
 
@@ -204,6 +205,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
                          "UBT+AdvSBT@45MeV",
                          "UBT+AdvSBT@90MeV",
                          "UBT+GNNSBT@45MeV",
+                         "UBT+[ AdvSBT+GNNSBT ]@45MeV"
                             ]
 
 
@@ -253,11 +255,12 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
 
                         "preselection+UBT+AdvSBT@45MeV+inv_mass",
                         "preselection+UBT+AdvSBT@90MeV+inv_mass",
-                        'GoodDaughters+n_particles+fiducial+doca+impact_par+UBT',
-                        'GoodDaughters+n_particles+fiducial+doca+impact_par',
-                        'GoodDaughters+n_particles+fiducial+doca',
-                        'GoodDaughters+n_particles+fiducial',
+                        'GoodDaughters+n_particles+FiducialCuts+doca+impact_par+UBT',
+                        'GoodDaughters+n_particles+FiducialCuts+doca+impact_par',
+                        'GoodDaughters+n_particles+FiducialCuts+doca',
+                        'GoodDaughters+n_particles+FiducialCuts',
                         'GoodDaughters+n_particles',
+                        'FiducialCuts',
                         'GoodDaughters',
                         ]
     
@@ -466,13 +469,15 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
                 offset=0
 
             #-------------------------------------------------------------------------
-            #-------------------------Cumulative Cuts(Signal Selections)----------------
+            #-------------------------Signal Selections----------------
 
-            selection_list['GoodDaughters']                                                  = selection_list["n_dof"] and selection_list["reduced_chi2"] and selection_list["d_mom"]
-            selection_list['GoodDaughters+'+'n_particles']                                   = selection_list['GoodDaughters'] and selection_list["n_particles"]
-            selection_list['GoodDaughters+'+'n_particles+'+'fiducial']                       = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"]
-            selection_list['GoodDaughters+'+'n_particles+'+'fiducial+'+'doca']               = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"] and selection_list["doca"]
-            selection_list['GoodDaughters+'+'n_particles+'+'fiducial+'+'doca+'+'impact_par'] = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"] and selection_list["doca"] and selection_list["impact_par"]        
+            selection_list['FiducialCuts'   ]      = selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"]
+            selection_list['GoodDaughters'  ]      = selection_list["n_dof"] and selection_list["reduced_chi2"] and selection_list["d_mom"]
+            
+            selection_list['GoodDaughters+'+'n_particles']                                       = selection_list['GoodDaughters'] and selection_list["n_particles"]
+            selection_list['GoodDaughters+'+'n_particles+'+'FiducialCuts']                       = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"]
+            selection_list['GoodDaughters+'+'n_particles+'+'FiducialCuts+'+'doca']               = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"] and selection_list["doca"]
+            selection_list['GoodDaughters+'+'n_particles+'+'FiducialCuts+'+'doca+'+'impact_par'] = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"] and selection_list["doca"] and selection_list["impact_par"]        
 
             
             pre_ok = selection.preselection_cut(signal, IP_cut=ip_high, show_table=False,offset=offset) and selection_list["impact_par"] #adding refined IP check since preselection_cut only sets upperlimit on IP
@@ -499,6 +504,8 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
 
             UBT_veto,ubthits                           = veto_ship.UBT_decision()
             selection_list['UBT'                   ]   = not(UBT_veto)
+
+            selection_list['GoodDaughters+'+'n_particles+'+'FiducialCuts+'+'doca+'+'impact_par+'+'UBT'] = selection_list['GoodDaughters'] and selection_list["n_particles"] and selection_list["fiducial"] and selection_list["dist2innerwall"] and selection_list["dist2vesselentrance"] and selection_list["doca"] and selection_list["impact_par"] and selection_list['UBT']
             
             xs, ys, zs,bestHits=[],[],[],[]
             
@@ -532,8 +539,15 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
 
             selection_list['GNNSBT@45MeV'          ]   = not(reject) # specific GNN trained on neuDIS in He
 
+            selection_list['[ AdvSBT+GNNSBT ]@45MeV'           ]   = selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV']
+            
+            selection_list['GoodDaughters+'+'BasicSBT@45MeV'            ]   = selection_list['GoodDaughters'] and selection_list['BasicSBT@45MeV']
+            selection_list['GoodDaughters+'+'AdvSBT@45MeV'              ]   = selection_list['GoodDaughters'] and selection_list['AdvSBT@45MeV'  ]
+            selection_list['GoodDaughters+'+'[ AdvSBT+GNNSBT ]@45MeV'   ]   = selection_list['GoodDaughters'] and selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV']
+
             #-------------------------------------------------------------------------
             #-----------------------------Other Cuts----------------------------------
+            
             inv_mass_pass=selection.invariant_mass(signal)  > 0.15*u.GeV
 
             selection_list['inv_mass']   = inv_mass_pass
@@ -549,83 +563,248 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
             selection_list['PID']                   = pid_pass
 
             selection_list['PID_leptonic']          = (int(pid)==1 or int(pid)==3)
+            selection_list['PID_semileptonic']      = (int(pid)==2 or int(pid)==3)
+
             selection_list['PID_ee']                = pid==1.1 or int(pid)==3
             selection_list['PID_mumu']              = pid==1.2 or int(pid)==3
 
-            selection_list['PID_semileptonic']      = (int(pid)==2 or int(pid)==3)
             selection_list['PID_semileptonic_e']    = pid==2.1 or int(pid)==3
             selection_list['PID_semileptonic_mu']   = pid==2.2 or int(pid)==3
 
-            selection_list['preselection+'+'PID_ee']             = selection_list['preselection'] and selection_list['PID_ee']
-            selection_list['preselection+'+'PID_mumu']           = selection_list['preselection'] and selection_list['PID_mumu']
-            selection_list['preselection+'+'PID_semileptonic_e'] = selection_list['preselection'] and selection_list['PID_semileptonic_e']
-            selection_list['preselection+'+'PID_semileptonic_mu']= selection_list['preselection'] and selection_list['PID_semileptonic_mu']
-            
+
             #--------------------------------Combined Cuts-----------------------------------------            
             
-            selection_list['GoodDaughters+'+'BasicSBT@45MeV']   = selection_list['GoodDaughters'] and selection_list['BasicSBT@45MeV']
-            selection_list['GoodDaughters+'+'AdvSBT@45MeV']     = selection_list['GoodDaughters'] and selection_list['AdvSBT@45MeV'  ]
 
-            #combined veto efficiency
-            selection_list['UBT+'+'BasicSBT@45MeV' ]   =   selection_list['UBT'] and selection_list['BasicSBT@45MeV']
-            selection_list['UBT+'+'BasicSBT@90MeV' ]   =   selection_list['UBT'] and selection_list['BasicSBT@90MeV']
-            selection_list['UBT+'+'AdvSBT@45MeV'   ]   =   selection_list['UBT'] and selection_list['AdvSBT@45MeV']
-            selection_list['UBT+'+'AdvSBT@90MeV'   ]   =   selection_list['UBT'] and selection_list['AdvSBT@90MeV']            
-            selection_list['UBT+'+'GNNSBT@45MeV'   ]   =   selection_list['UBT'] and selection_list['GNNSBT@45MeV']      
+            #UBT+ SBT
 
+            selection_list['UBT+'+'BasicSBT@45MeV'          ]   =   selection_list['UBT'] and selection_list['BasicSBT@45MeV']
+            selection_list['UBT+'+'BasicSBT@90MeV'          ]   =   selection_list['UBT'] and selection_list['BasicSBT@90MeV']
+            selection_list['UBT+'+'AdvSBT@45MeV'            ]   =   selection_list['UBT'] and selection_list['AdvSBT@45MeV']
+            selection_list['UBT+'+'AdvSBT@90MeV'            ]   =   selection_list['UBT'] and selection_list['AdvSBT@90MeV']            
+            selection_list['UBT+'+'GNNSBT@45MeV'            ]   =   selection_list['UBT'] and selection_list['GNNSBT@45MeV']      
+            selection_list['UBT+'+'[ AdvSBT+GNNSBT ]@45MeV' ]   =   selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV'])
 
-            selection_list['preselection+'+'UBT'         ]   = selection_list['preselection'] and selection_list['UBT']
+            #Sel. + SBT
+            
+            selection_list['preselection+'+'BasicSBT@45MeV'             ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']
+            selection_list['preselection+'+'BasicSBT@90MeV'             ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']
+            selection_list['preselection+'+'AdvSBT@45MeV'               ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']
+            selection_list['preselection+'+'AdvSBT@90MeV'               ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV'    ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV']
 
-            #--Basic@45--
-            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV'                    ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']
+            #Sel. + UBT+ SBT
+
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV'          ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV'          ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV' ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV'])
+
+            #Sel. + UBT
+            
+            selection_list['preselection+'+'UBT'   ]   = selection_list['preselection'] and selection_list['UBT']
+
+            #Sel. + UBT + PID           
+
+            selection_list['preselection+'+'UBT+'+'PID'                 ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID']  
+            selection_list['preselection+'+'UBT+'+'PID_ee'              ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_ee']
+            selection_list['preselection+'+'UBT+'+'PID_mumu'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_mumu']
+            selection_list['preselection+'+'UBT+'+'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'UBT+'+'PID_semileptonic_mu' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_semileptonic_mu']
+
+            #Sel. + UBT + PID + SBT
+            
             selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'+'PID'             ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID']
-            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'+'PID+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID']  and selection_list['inv_mass']
-
-            #--Basic@90--
-            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV'                    ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']
             selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'+'PID'             ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID']
-            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'+'PID+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID']  and selection_list['inv_mass']
-
-            #--Adv@45MeV--
-            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV'                      ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']
             selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'   +'PID'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID']
-            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'   +'PID+'+'inv_mass']   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID']  and selection_list['inv_mass']
-
-            #--Adv@90MeV--
-            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV'                      ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']
             selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'   +'PID'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID']
-            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'   +'PID+'+'inv_mass']   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID']  and selection_list['inv_mass']
-
-            #--GNN@45MeV--
-            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV'                      ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']
             selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'   +'PID'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID']
-            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'   +'PID+'+'inv_mass']   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID']  and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+'   +'PID' ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV'])   and selection_list['PID']
+            
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_ee'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_ee']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_ee'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_ee']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_ee'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_ee']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_ee'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_ee']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_ee'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_ee']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_ee'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_ee']
 
-            #--noUBT used--
-            selection_list['preselection+'                                      +'PID'  ]   = selection_list['preselection']                                                                                                   and selection_list['PID']
-            selection_list['preselection+'        +'AdvSBT@45MeV+'             +'PID'  ]   = selection_list['preselection']                           and selection_list['AdvSBT@45MeV']                                      and selection_list['PID']
-            selection_list['preselection+'        +'AdvSBT@90MeV+'             +'PID'  ]   = selection_list['preselection']                           and selection_list['AdvSBT@90MeV']                                      and selection_list['PID']
-            selection_list['preselection+'        +'[ AdvSBT+GNNSBT ]@45MeV+' +'PID' ]   = selection_list['preselection']                           and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV']) and selection_list['PID']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_mumu']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_mumu']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_mumu']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_mumu']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_mumu']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_mumu']
 
-            # other cuts as backup info
-            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV'                          ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV'])
-            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+'   +'PID'               ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV'])   and selection_list['PID']
-            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+'   +'PID+'+'inv_mass'   ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV'])   and selection_list['PID']  and selection_list['inv_mass']            
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_e']
 
-            selection_list['preselection+'                                  +'inv_mass' ]   = selection_list['preselection']                                                                                            and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'                          +'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT']                                                                  and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'+'PID+'                  +'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT']                                       and selection_list['PID']  and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'       +'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']                             and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'       +'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']                             and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'         +'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']                               and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'         +'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']                               and selection_list['inv_mass']
-            selection_list['preselection+'+'UBT+'+'PID'                               ]   = selection_list['preselection'] and selection_list['UBT']                                       and selection_list['PID']  
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_mu']
 
-            selection_list['preselection+'        +'BasicSBT@45MeV'                    ]   = selection_list['preselection']                           and selection_list['BasicSBT@45MeV']
-            selection_list['preselection+'        +'BasicSBT@90MeV'                    ]   = selection_list['preselection']                           and selection_list['BasicSBT@90MeV']
-            selection_list['preselection+'        +'AdvSBT@45MeV'                      ]   = selection_list['preselection']                           and selection_list['AdvSBT@45MeV']
-            selection_list['preselection+'        +'AdvSBT@90MeV'                      ]   = selection_list['preselection']                           and selection_list['AdvSBT@90MeV']
-            selection_list['preselection+'        +'[ AdvSBT+GNNSBT ]@45MeV'           ]   = selection_list['preselection']                           and selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV']
+            #Sel. + UBT + PID + SBT + inv.mass
+
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'+'PID+'+'inv_mass'             ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID'] and selection_list['inv_mass']            
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'+'PID+'+'inv_mass'             ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID'] and selection_list['inv_mass']            
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'   +'PID+'+'inv_mass'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'   +'PID+'+'inv_mass'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'   +'PID+'+'inv_mass'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+'   +'PID+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV'])   and selection_list['PID'] and selection_list['inv_mass']
+            
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_ee'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_mumu'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'          +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'          +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'            +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'            +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'            +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+
+            #Sel. + PID
+
+            selection_list['preselection+'+'PID'                ]   = selection_list['preselection'] and selection_list['PID']
+            selection_list['preselection+'+'PID_ee'             ]   = selection_list['preselection'] and selection_list['PID_ee']
+            selection_list['preselection+'+'PID_mumu'           ]   = selection_list['preselection'] and selection_list['PID_mumu']
+            selection_list['preselection+'+'PID_semileptonic_e' ]   = selection_list['preselection'] and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'PID_semileptonic_mu']   = selection_list['preselection'] and selection_list['PID_semileptonic_mu']
+
+            #Sel. + SBT + PID
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV'] and selection_list['PID']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV'] and selection_list['PID']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']   and selection_list['PID']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']   and selection_list['PID']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']   and selection_list['PID']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']  and selection_list['GNNSBT@45MeV']) and selection_list['PID']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_ee'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_ee']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_ee'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_ee']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_ee'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_ee']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_ee'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_ee']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_ee'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_ee']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_ee'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_ee']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_mumu']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_mumu']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_mumu']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_mumu']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_mumu'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_mumu']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_mumu'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_mumu']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_semileptonic_e'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_e']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_e'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_e']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_mu']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_mu'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_mu']
+
+            #Sel. + SBT + PID + inv.mass
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV'] and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV'] and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']   and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']   and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']   and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID+'+'inv_mass'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']  and selection_list['GNNSBT@45MeV']) and selection_list['PID'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_ee+'+'inv_mass'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_ee'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_mumu+'+'inv_mass'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_mumu'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+
+            selection_list['preselection+'+'BasicSBT@45MeV+'          +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@45MeV']  and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'BasicSBT@90MeV+'          +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['BasicSBT@90MeV']  and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@45MeV+'            +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@45MeV']    and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'AdvSBT@90MeV+'            +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['AdvSBT@90MeV']    and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'GNNSBT@45MeV+'            +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['GNNSBT@45MeV']    and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'[ AdvSBT+GNNSBT ]@45MeV+' +'PID_semileptonic_mu+'+'inv_mass'  ]   = selection_list['preselection'] and (selection_list['AdvSBT@45MeV']   and selection_list['GNNSBT@45MeV']) and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+
+
+            #Sel. + inv. mass
+
+            selection_list['preselection+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['inv_mass']
+
+            #Sel. + PID + inv. mass
+
+            selection_list['preselection+'+'PID+' +'inv_mass'               ]   = selection_list['preselection'] and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'PID_ee+'  +'inv_mass'           ]   = selection_list['preselection'] and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'PID_mumu+' +'inv_mass'          ]   = selection_list['preselection'] and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'PID_semileptonic_e+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'PID_semileptonic_mu+'+'inv_mass']   = selection_list['preselection'] and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+
+
+            #Sel. + UBT + inv. mass
+
+            selection_list['preselection+'+'UBT+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['inv_mass']
+
+            #Sel. + UBT + PID + inv. mass
+
+            selection_list['preselection+'+'UBT+'+'PID+' +'inv_mass'                ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'PID_ee+'+'inv_mass'              ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_ee'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'PID_mumu+'+'inv_mass'            ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_mumu'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'PID_semileptonic_e+'+'inv_mass'  ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_semileptonic_e'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'PID_semileptonic_mu+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['PID_semileptonic_mu'] and selection_list['inv_mass']
+
+            #Sel. + UBT + SBT + inv. mass
+            
+            selection_list['preselection+'+'UBT+'+'BasicSBT@45MeV+'       +'inv_mass'   ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@45MeV'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'BasicSBT@90MeV+'       +'inv_mass'   ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['BasicSBT@90MeV'] and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@45MeV+'         +'inv_mass'   ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@45MeV']   and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'AdvSBT@90MeV+'         +'inv_mass'   ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['AdvSBT@90MeV']   and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'GNNSBT@45MeV+'         +'inv_mass'   ]   = selection_list['preselection'] and selection_list['UBT'] and selection_list['GNNSBT@45MeV']   and selection_list['inv_mass']
+            selection_list['preselection+'+'UBT+'+'[ AdvSBT+GNNSBT ]@45MeV+'+'inv_mass' ]   = selection_list['preselection'] and selection_list['UBT'] and (selection_list['AdvSBT@45MeV'] and selection_list['GNNSBT@45MeV']) and selection_list['inv_mass']
+            
+
             #-------------------------------------------------------------------------
 
             for c in {"all", cat}:
@@ -699,7 +878,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
         )
 
         if not options.testing_code: continue  #only dump the tables if test case
-        """
+        
         print(f"----------------------------------------------------------{cat}---------------------------------------------------------")
         
         printed_tags =set()
@@ -816,6 +995,6 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
             print(fallback_table)
         #---------------------------------------------------------------------
         
-        """
-if __name__ == "__main__":
-    main()
+        
+#if __name__ == "__main__":
+#    main()
