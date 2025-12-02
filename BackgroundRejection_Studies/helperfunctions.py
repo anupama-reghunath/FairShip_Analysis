@@ -148,7 +148,7 @@ class selection_check:
         return dist  # in cm
 
     def dist_to_innerwall(self, candidate):
-        """Calculate the minimum distance(in XY plane) of the candidate decay vertex to the inner wall of the decay vessel. If outside the decay volume, or if distance > 100cm,Return 0."""
+        """Calculate the minimum distance(in XY plane) of the candidate decay vertex to the inner wall of the decay vessel. If outside the decay volume, or if distance > 100m, return 0."""
         candidate_pos = ROOT.TVector3()
         candidate.GetVertex(candidate_pos)
         position = (candidate_pos.X(), candidate_pos.Y(), candidate_pos.Z())
