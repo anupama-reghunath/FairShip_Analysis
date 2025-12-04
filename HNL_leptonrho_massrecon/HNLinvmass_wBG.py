@@ -1,9 +1,10 @@
 """
-Calculate the invariant mass for HNL->rho lepton channel using a rho constraint using files generated using Fairship and plot it with neuDIS dangerouns background
 
-Derived from python HNLinvmass_neuDIS_updated.py , but now also automatically choses the correct solution depending on the event.
+This script reconstructs the Heavy Neutral Lepton (HNL) mass in the ℓ + ρ channel using signal samples produced with EventCalc_Ship (FairShip) and overlays them with dangerous DIS backgrounds (ν-DIS and μ-DIS) as well as two-body ℓπ. A  π⁰–momentum prior is used to resolve the twofold ambiguity in the π⁰ longitudinal momentum.
+Preselections are always applied(impact-parameter window 10 < IP < 250 cm).
+Options available to run: wPID,wUBT,wSBT.
 
-selection checks= selection + UBT + 10<IP<250
+The output file name encodes the selection configuration, lepton flavour and mass, e.g. HNLinvmass_wBG_wPID_wUBT_wSBT_erho_1.0.root.
 """
 
 import HNLinvmass_EventCalc as functions
@@ -537,11 +538,10 @@ def process_data(parent_path,h_prior,lepton_pdg_,check_PDG,check_SBT,check_UBT):
 		if ROOT.TMath.IsNaN(sol1_pion0_pp) and ROOT.TMath.IsNaN(sol2_pion0_pp):
 		    
 		    rho_mass_min 				= functions.calculate_min_rho_mass(pion_rotated,lepton_rotated, calc_pion0_rotated)
-		    rho_median   				= functions.rho_median_mass_from_min(rho_mass_min)
-		    sol1_pion0_pp,sol2_pion0_pp = functions.calculate_pion0_parallel(lepton_rotated,pion_rotated,calc_pion0_rotated,rho_mass=rho_median)
+		    #rho_median   				= functions.rho_median_mass_from_min(rho_mass_min)
+		    sol1_pion0_pp,sol2_pion0_pp = functions.calculate_pion0_parallel(lepton_rotated,pion_rotated,calc_pion0_rotated,rho_mass=rho_mass_min)#rho_median)
 
 		if not ROOT.TMath.IsNaN(sol1_pion0_pp):
-
 			h["sol1_calc_pion0_pp"].Fill(sol1_pion0_pp,event_weight)
 			HNLmass1 = functions.reconstruct_hnl_mass(sol1_pion0_pp,lepton_rotated, pion_rotated,calc_pion0_rotated)
 			h["calcmassdist1"].Fill(HNLmass1,event_weight)
@@ -563,7 +563,6 @@ def process_data(parent_path,h_prior,lepton_pdg_,check_PDG,check_SBT,check_UBT):
 			print("still negative radicands!")
 			return
 
-		
 		chosen_p0z = pick_pi0(sol1_pion0_pp,sol2_pion0_pp,lepton_rotated, pion_rotated, calc_pion0_rotated,h_prior)
 		if len(gamma_id)==2:
 			h["pion0_pp_truth_vs_chosensol"].Fill(truth_pion0_new.P(),chosen_p0z)
