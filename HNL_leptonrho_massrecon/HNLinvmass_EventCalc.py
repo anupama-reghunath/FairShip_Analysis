@@ -183,7 +183,7 @@ def rho_median_mass_from_min(rho_mass_min,width=0.149):
 
     return ROOT.TMath.Sqrt(m_rho_med_squared)
 
-def calculate_pion0_parallel(lepton_rotated,pion_rotated,calc_pion0_rotated,rho_mass=RHO_MASS_NOMINAL):
+def calculate_pion0_parallel(lepton_rotated,pion_rotated,calc_pion0_rotated,rho_mass=RHO_MASS_NOMINAL,use_mathematica = False):
 
     pion_pt     = pion_rotated.Pt()
     pion_phi    = pion_rotated.Phi()
@@ -200,36 +200,58 @@ def calculate_pion0_parallel(lepton_rotated,pion_rotated,calc_pion0_rotated,rho_
     
     cos_phi_diff =  ROOT.TMath.Cos(lepton_phi - pion_phi) 
     
-    sqrt_inner_term = (
-                        pion_energy**2 * (
-                                          pion_mass**4 
-                                          - 4 * pion_energy**2 * PION0_MASS**2
-                                          + 2 * pion_mass**2   * PION0_MASS**2
-                                          +     PION0_MASS**4 
-                                          - 2 * pion_mass**2   * rho_mass**2
-                                          - 2 * PION0_MASS**2  * rho_mass**2
-                                          +     rho_mass**4
-                                          + 4 * PION0_MASS**2  * pion_pp**2
-                                          + 4 * pion_mass**2   * pion_pt**2
-                                          + 4 * PION0_MASS**2  * pion_pt**2
-                                          - 4 * rho_mass**2    * pion_pt**2
-                                          + 2 * lepton_pt**2   * pion_pt**2
-                                          + 4 * pion_pt**4
-                                          - 4 * pion_energy**2 * pion0_pt**2
-                                          + 4 * pion_pp**2     * pion0_pt**2
-                                          + 4 * pion_pt * lepton_pt * cos_phi_diff *   (
-                                                                                        pion_mass**2 
-                                                                                        + PION0_MASS**2 
-                                                                                        - rho_mass**2 
-                                                                                        + 2 * pion_pt**2
-                                                                                        ) 
+    if use_mathematica:
 
-                                          + 2 * pion_pt**2 * lepton_pt**2 *  ROOT.TMath.Cos(2 * (lepton_phi - pion_phi))
-                                          )
-                        )
+        sqrt_inner_term = (
+                            pion_energy**2 * (
+                                              pion_mass**4 
+                                              - 4 * pion_energy**2 * PION0_MASS**2
+                                              + 2 * pion_mass**2   * PION0_MASS**2
+                                              +     PION0_MASS**4 
+                                              - 2 * pion_mass**2   * rho_mass**2
+                                              - 2 * PION0_MASS**2  * rho_mass**2
+                                              +     rho_mass**4
+                                              + 4 * PION0_MASS**2  * pion_pp**2
+                                              + 4 * pion_mass**2   * pion_pt**2
+                                              + 4 * PION0_MASS**2  * pion_pt**2
+                                              - 4 * rho_mass**2    * pion_pt**2
+                                              + 2 * lepton_pt**2   * pion_pt**2
+                                              + 4 * pion_pt**4
+                                              - 4 * pion_energy**2 * pion0_pt**2
+                                              + 4 * pion_pp**2     * pion0_pt**2
+                                              + 4 * pion_pt * lepton_pt * cos_phi_diff *   (
+                                                                                            pion_mass**2 
+                                                                                            + PION0_MASS**2 
+                                                                                            - rho_mass**2 
+                                                                                            + 2 * pion_pt**2
+                                                                                            ) 
+
+                                              + 2 * pion_pt**2 * lepton_pt**2 *  ROOT.TMath.Cos(2 * (lepton_phi - pion_phi))
+                                              )
+                            )
+    else:
+
+        #A_term = rho_mass**2 - pion_mass**2 - PION0_MASS**2 - 2 * pion_pt * (pion_pt + lepton_pt)
+        A_term = (rho_mass**2
+          - pion_mass**2
+          - PION0_MASS**2
+          - 2 * (pion_pt**2 + pion_pt * lepton_pt * cos_phi_diff))
+        
+        alpha = energy_squared_diff
+        beta = - A_term * pion_pp
+        
+        #gamma =- A_term **2 + pion_energy**2 * (PION0_MASS**2 + (pion_pt + lepton_pt) * (pion_pt + lepton_pt))
+        # --- γ ---------------------------------------------------------------
+        vec_sum_pt2 = (pion_pt**2
+                       + lepton_pt**2
+                       + 2 * pion_pt * lepton_pt * cos_phi_diff)
+
+        gamma = -A_term**2 + pion_energy**2 * (PION0_MASS**2 + vec_sum_pt2)
+
+        sqrt_inner_term = (beta**2 - 4 * alpha * gamma)
+        
     
-    sqrt_argument = sqrt_inner_term
-    term2_part2 =  ROOT.TMath.Sqrt(sqrt_argument)
+    term2_part2 =  ROOT.TMath.Sqrt(sqrt_inner_term)
 
     
     term1 = (pion_mass**2 * pion_pp  
@@ -239,13 +261,12 @@ def calculate_pion0_parallel(lepton_rotated,pion_rotated,calc_pion0_rotated,rho_
             + 2 * pion_pp * pion_pt * lepton_pt * cos_phi_diff
             )
     
-    term2 = term2_part2 / energy_squared_diff
+    #term2 = term2_part2 / energy_squared_diff
     
     pion0_pp_min = -((1 / (2 * energy_squared_diff)) * (term1 + term2_part2))  
     pion0_pp_max = -((1 / (2 * energy_squared_diff)) * (term1 - term2_part2)) 
         
     return pion0_pp_min,pion0_pp_max
-
 def rotate_momentum_to_hnl_frame(decay_vertex, production_vertex,vec):
 
     def calculate_momentum_in_new_coordinates(vector, x, y, z):
