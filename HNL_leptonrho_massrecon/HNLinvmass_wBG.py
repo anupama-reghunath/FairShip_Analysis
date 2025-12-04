@@ -780,7 +780,7 @@ def main(lepton, mass, filename,PIDcheck,SBTcheck,UBTcheck):
 		lepton_pdg_='13'
 		leptontag= 'mu'
 
-	print(f"\n\nRunning Analysis:{lepton}rho mass:{mass}, PIDcheck:{PIDcheck}\n\n")
+	print(f"\n\nRunning Analysis:{lepton}rho mass:{mass}, \n\tPIDcheck:{PIDcheck}, UBTcheck:{UBTcheck}, SBTcheck:{SBTcheck} \n\n")
 	
 	masstag=f"{float(mass):.3e}"
 	
